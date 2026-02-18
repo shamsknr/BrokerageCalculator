@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSE Brokerage Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00d4aa;
+    --accent2: #ff6b35;
+    --text: #e8edf5;
+    --muted: #5a6a82;
+    --green: #00d4aa;
+    --red: #ff4d6d;
+    --gold: #ffd166;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Mono', monospace;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    background-image: 
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(0,212,170,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 30% at 80% 80%, rgba(255,107,53,0.05) 0%, transparent 50%);
+  }
+
+  header {
+    padding: 32px 40px 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+  }
+
+  .logo-mark {
+    width: 44px; height: 44px;
+    background: linear-gradient(135deg, var(--accent), #0099ff);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+    color: #0a0e1a;
+    flex-shrink: 0;
+  }
+
+  header h1 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+  }
+
+  header p { color: var(--muted); font-size: 12px; margin-top: 2px; }
+
+  .badge {
+    margin-left: auto;
+    background: rgba(0,212,170,0.1);
+    border: 1px solid rgba(0,212,170,0.3);
+    color: var(--accent);
+    font-size: 10px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .main { max-width: 1200px; margin: 0 auto; padding: 32px 40px 60px; }
+
+  /* Input Panel */
+  .input-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .input-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), #0099ff, transparent);
+  }
+
+  .panel-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 16px; }
+
+  .field label {
+    display: block;
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .field input, .field select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+
+  .field input:focus, .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.1);
+  }
+
+  .field select option { background: var(--surface2); }
+
+  /* Segment tabs */
+  .segment-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    background: var(--surface2);
+    padding: 4px;
+    border-radius: 10px;
+    width: fit-content;
+  }
+
+  .seg-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    color: var(--muted);
+    background: transparent;
+  }
+
+  .seg-btn.active {
+    background: var(--accent);
+    color: #0a0e1a;
+    box-shadow: 0 4px 15px rgba(0,212,170,0.3);
+  }
+
+  .seg-btn:not(.active):hover { color: var(--text); }
+
+  /* Results Grid */
+  .results-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .results-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 18px;
+  }
+
+  .broker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+  }
+
+  .broker-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+    cursor: default;
+  }
+
+  .broker-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0,212,170,0.3);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  .broker-card.cheapest {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent), 0 8px 30px rgba(0,212,170,0.15);
+  }
+
+  .broker-card.cheapest::before {
+    content: '🏆 LOWEST';
+    position: absolute;
+    top: 12px; right: 12px;
+    background: var(--accent);
+    color: #0a0e1a;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    padding: 3px 8px;
+    border-radius: 20px;
+  }
+
+  .broker-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .broker-logo {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .broker-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+  }
+
+  .broker-type { font-size: 10px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+  .charge-rows { border-top: 1px solid var(--border); padding-top: 14px; }
+
+  .charge-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    font-size: 12px;
+  }
+
+  .charge-row .label { color: var(--muted); }
+  .charge-row .val { font-weight: 500; }
+
+  .charge-row.total {
+    border-top: 1px dashed var(--border);
+    margin-top: 8px;
+    padding-top: 10px;
+    font-size: 14px;
+  }
+
+  .charge-row.total .label {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .charge-row.total .val {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 16px;
+    color: var(--accent2);
+  }
+
+  .net-pl {
+    margin-top: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+
+  .net-pl .label { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  .net-pl .val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 16px; }
+  .net-pl .val.profit { color: var(--green); }
+  .net-pl .val.loss { color: var(--red); }
+
+  /* Summary bar */
+  .summary-bar {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px 28px;
+    margin-bottom: 28px;
+    display: flex;
+    gap: 32px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .sum-item .sum-label { font-size: 11px; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+  .sum-item .sum-val { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; }
+
+  .divider { width: 1px; height: 40px; background: var(--border); }
+
+  /* broker colors */
+  .z { background: linear-gradient(135deg, #387ED1, #1a4a8c); }
+  .u { background: linear-gradient(135deg, #7B2FBE, #4a1a75); }
+  .a { background: linear-gradient(135deg, #FF6B35, #c44018); }
+  .f { background: linear-gradient(135deg, #00B5D8, #006b80); }
+  .d { background: linear-gradient(135deg, #00C853, #007a30); }
+  .ab { background: linear-gradient(135deg, #E91E63, #8c0e39); }
+  .p { background: linear-gradient(135deg, #FF5722, #b33000); }
+  .g { background: linear-gradient(135deg, #4CAF50, #2d6b30); }
+
+  @media (max-width: 768px) {
+    header { padding: 20px; }
+    .main { padding: 20px; }
+    .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+    .broker-grid { grid-template-columns: 1fr; }
+    .summary-bar { gap: 16px; }
+  }
+
+  @media (max-width: 480px) {
+    .grid-3, .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* tooltip */
+  .info-tip {
+    display: inline-block;
+    width: 15px; height: 15px;
+    background: var(--border);
+    border-radius: 50%;
+    font-size: 9px;
+    text-align: center;
+    line-height: 15px;
+    color: var(--muted);
+    cursor: help;
+    position: relative;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+  }
+
+  .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+
+  .calc-btn {
+    background: linear-gradient(135deg, var(--accent), #0099ff);
+    color: #0a0e1a;
+    border: none;
+    padding: 14px 32px;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-top: 8px;
+    box-shadow: 0 4px 20px rgba(0,212,170,0.3);
+  }
+
+  .calc-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0,212,170,0.4);
+  }
+
+  .futures-extra { display: none; }
+  .futures-extra.show { display: grid; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">₹</div>
+  <div>
+    <h1>NSE Brokerage Calculator</h1>
+    <p>Compare charges across 8 major Indian brokers</p>
+  </div>
+  <span class="badge">NSE / BSE</span>
+</header>
+
+<div class="main">
+
+  <div class="input-panel">
+    <div class="panel-title">Segment</div>
+    <div class="segment-tabs">
+      <button class="seg-btn active" onclick="setSegment('intraday')">Intraday</button>
+      <button class="seg-btn" onclick="setSegment('delivery')">Delivery</button>
+      <button class="seg-btn" onclick="setSegment('futures')">Futures</button>
+      <button class="seg-btn" onclick="setSegment('options')">Options</button>
+    </div>
+
+    <div class="panel-title">Trade Details</div>
+    <div class="grid-4" style="margin-bottom:16px">
+      <div class="field">
+        <label>Buy Price (₹)</label>
+        <input type="number" id="buyPrice" placeholder="e.g. 1500" value="1500" min="0" step="0.01" oninput="calculate()">
+      </div>
+      <div class="field">
+        <label>Sell Price (₹)</label>
+        <input type="number" id="sellPrice" placeholder="e.g. 1520" value="1520" min="0" step="0.01" oninput="calculate()">
+      </div>
+      <div class="field">
+        <label>Quantity (Shares)</label>
+        <input type="number" id="qty" placeholder="e.g. 100" value="100" min="1" oninput="calculate()">
+      </div>
+      <div class="field" id="lotField" style="display:none">
+        <label>Lot Size</label>
+        <input type="number" id="lotSize" placeholder="e.g. 50" value="50" min="1" oninput="calculate()">
+      </div>
+      <div class="field" id="strikePremField" style="display:none">
+        <label>Premium (₹)</label>
+        <input type="number" id="premium" placeholder="e.g. 25" value="25" min="0" step="0.01" oninput="calculate()">
+      </div>
+    </div>
+
+    <button class="calc-btn" onclick="calculate()">⚡ Calculate Charges</button>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-bar" id="summaryBar" style="display:none">
+    <div class="sum-item">
+      <div class="sum-label">Trade Value</div>
+      <div class="sum-val" id="sumTradeVal">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="sum-item">
+      <div class="sum-label">Gross P&L</div>
+      <div class="sum-val" id="sumGrossPL">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="sum-item">
+      <div class="sum-label">Lowest Brokerage</div>
+      <div class="sum-val" id="sumLowest" style="color:var(--accent)">—</div>
+    </div>
+    <div class="divider"></div>
+    <div class="sum-item">
+      <div class="sum-label">Highest Brokerage</div>
+      <div class="sum-val" id="sumHighest" style="color:var(--accent2)">—</div>
+    </div>
+  </div>
+
+  <div class="results-header">
+    <h2>Broker Comparison</h2>
+    <span id="segLabel" style="font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:1px;text-transform:uppercase"></span>
+  </div>
+
+  <div class="broker-grid" id="brokerGrid">
+    <div class="empty-state" style="grid-column:1/-1">
+      <div class="icon">📊</div>
+      <p>Enter trade details above and click Calculate to compare brokerage charges</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let currentSegment = 'intraday';
+
+const BROKERS = [
+  {
+    id: 'zerodha', name: 'Zerodha', short: 'Z', logoClass: 'z', type: 'Discount Broker',
+    intraday: { flat: 20, pct: 0.0003, min: 0 },
+    delivery: { flat: 0, pct: 0, min: 0 },
+    futures: { flat: 20, pct: 0.0003, min: 0 },
+    options: { flat: 20, pct: 0, min: 0 },
+  },
+  {
+    id: 'upstox', name: 'Upstox', short: 'U', logoClass: 'u', type: 'Discount Broker',
+    intraday: { flat: 20, pct: 0.0005, min: 0 },
+    delivery: { flat: 0, pct: 0, min: 0 },
+    futures: { flat: 20, pct: 0.0005, min: 0 },
+    options: { flat: 20, pct: 0, min: 0 },
+  },
+  {
+    id: 'angelone', name: 'Angel One', short: 'A', logoClass: 'a', type: 'Full Service',
+    intraday: { flat: 20, pct: 0.0025, min: 0 },
+    delivery: { flat: 0, pct: 0, min: 0 },
+    futures: { flat: 25, pct: 0.00175, min: 0 },
+    options: { flat: 25, pct: 0, min: 0 },
+  },
+  {
+    id: 'fyers', name: 'Fyers', short: 'F', logoClass: 'f', type: 'Discount Broker',
+    intraday: { flat: 20, pct: 0.0003, min: 0 },
+    delivery: { flat: 0, pct: 0, min: 0 },
+    futures: { flat: 20, pct: 0.0003, min: 0 },
+    options: { flat: 20, pct: 0, min: 0 },
+  },
+  {
+    id: 'dhan', name: 'Dhan', short: 'D', logoClass: 'd', type: 'Discount Broker',
+    intraday: { flat: 20, pct: 0.0003, min: 0 },
+    delivery: { flat: 15, pct: 0, min: 0 },
+    futures: { flat: 20, pct: 0.0003, min: 0 },
+    options: { flat: 20, pct: 0, min: 0 },
+  },
+  {
+    id: 'aliceblue', name: 'Alice Blue', short: 'AB', logoClass: 'ab', type: 'Discount Broker',
+    intraday: { flat: 15, pct: 0.0005, min: 0 },
+    delivery: { flat: 0, pct: 0, min: 0 },
+    futures: { flat: 15, pct: 0.0005, min: 0 },
+    options: { flat: 15, pct: 0, min: 0 },
+  },
+  {
+    id: '5paisa', name: '5Paisa', short: 'P', logoClass: 'p', type: 'Discount Broker',
+    intraday: { flat: 10, pct: 0.0025, min: 0 },
+    delivery: { flat: 10, pct: 0, min: 0 },
+    futures: { flat: 10, pct: 0.0025, min: 0 },
+    options: { flat: 10, pct: 0, min: 0 },
+  },
+  {
+    id: 'groww', name: 'Groww', short: 'G', logoClass: 'g', type: 'Discount Broker',
+    intraday: { flat: 20, pct: 0.0005, min: 0 },
+    delivery: { flat: 20, pct: 0, min: 0 },
+    futures: { flat: 20, pct: 0.0005, min: 0 },
+    options: { flat: 20, pct: 0, min: 0 },
+  }
+];
+
+function setSegment(seg) {
+  currentSegment = seg;
+  document.querySelectorAll('.seg-btn').forEach((b, i) => {
+    b.classList.toggle('active', ['intraday','delivery','futures','options'][i] === seg);
+  });
+
+  // Show/hide lot size and premium fields
+  const lotField = document.getElementById('lotField');
+  const strikePremField = document.getElementById('strikePremField');
+  const qtyLabel = document.querySelector('#qty').previousElementSibling;
+
+  if (seg === 'futures') {
+    lotField.style.display = 'block';
+    strikePremField.style.display = 'none';
+    qtyLabel.textContent = 'No. of Lots';
+  } else if (seg === 'options') {
+    lotField.style.display = 'block';
+    strikePremField.style.display = 'block';
+    qtyLabel.textContent = 'No. of Lots';
+  } else {
+    lotField.style.display = 'none';
+    strikePremField.style.display = 'none';
+    qtyLabel.textContent = 'Quantity (Shares)';
+  }
+
+  document.getElementById('segLabel').textContent = seg;
+  calculate();
+}
+
+function fmt(n) {
+  if (n === undefined || n === null) return '₹0.00';
+  return '₹' + Math.abs(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function calcBrokerage(broker, seg, buyVal, sellVal, qty, premium) {
+  const cfg = broker[seg];
+  let brok = 0;
+
+  if (seg === 'delivery' && cfg.flat === 0 && cfg.pct === 0) {
+    brok = 0; // Free delivery
+  } else {
+    const turnover = buyVal + sellVal;
+    const pctBrok = turnover * cfg.pct;
+    const flatBrok = cfg.flat * 2; // buy + sell legs
+    brok = Math.min(flatBrok > 0 && pctBrok > 0 ? Math.min(flatBrok, pctBrok) : (flatBrok || pctBrok), flatBrok > 0 ? flatBrok : 9999);
+    // Actually: use min(flat, pct%) per leg
+    if (cfg.flat > 0 && cfg.pct > 0) {
+      brok = Math.min(cfg.flat, buyVal * cfg.pct) + Math.min(cfg.flat, sellVal * cfg.pct);
+    } else if (cfg.flat > 0) {
+      brok = cfg.flat * 2; // per leg
+    } else if (cfg.pct > 0) {
+      brok = turnover * cfg.pct;
+    }
+  }
+
+  // STT
+  let stt = 0;
+  if (seg === 'intraday') stt = sellVal * 0.00025;
+  else if (seg === 'delivery') stt = (buyVal + sellVal) * 0.001;
+  else if (seg === 'futures') stt = sellVal * 0.0001;
+  else if (seg === 'options') stt = sellVal * 0.0625 / 100; // 0.0625% on sell side (premium)
+
+  // Exchange txn charges (NSE)
+  let exc = 0;
+  const turnover = buyVal + sellVal;
+  if (seg === 'intraday' || seg === 'delivery') exc = turnover * 0.0000322;
+  else if (seg === 'futures') exc = turnover * 0.000019;
+  else if (seg === 'options') {
+    const optTurnover = (premium || 0) * qty * 2;
+    exc = optTurnover * 0.0005;
+  }
+
+  // SEBI charges
+  const sebi = turnover * 0.000001;
+
+  // Stamp duty
+  let stamp = 0;
+  if (seg === 'intraday') stamp = buyVal * 0.00003;
+  else if (seg === 'delivery') stamp = buyVal * 0.00015;
+  else if (seg === 'futures') stamp = buyVal * 0.00002;
+  else if (seg === 'options') stamp = buyVal * 0.00003;
+
+  // GST on brokerage + exchange
+  const gst = (brok + exc) * 0.18;
+
+  const total = brok + stt + exc + sebi + stamp + gst;
+
+  return { brok, stt, exc, sebi, stamp, gst, total };
+}
+
+function calculate() {
+  const buyPrice = parseFloat(document.getElementById('buyPrice').value) || 0;
+  const sellPrice = parseFloat(document.getElementById('sellPrice').value) || 0;
+  const qty = parseInt(document.getElementById('qty').value) || 0;
+  const lotSize = parseInt(document.getElementById('lotSize').value) || 1;
+  const premium = parseFloat(document.getElementById('premium').value) || 0;
+
+  if (!buyPrice || !sellPrice || !qty) {
+    document.getElementById('brokerGrid').innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon">📊</div><p>Enter valid trade details to compare brokerage charges</p></div>`;
+    document.getElementById('summaryBar').style.display = 'none';
+    return;
+  }
+
+  const isFutOpt = currentSegment === 'futures' || currentSegment === 'options';
+  const actualQty = isFutOpt ? qty * lotSize : qty;
+  const buyVal = buyPrice * actualQty;
+  const sellVal = sellPrice * actualQty;
+  const grossPL = (sellPrice - buyPrice) * actualQty;
+
+  // Compute for all brokers
+  const results = BROKERS.map(b => {
+    const charges = calcBrokerage(b, currentSegment, buyVal, sellVal, actualQty, premium);
+    return { ...b, charges };
+  });
+
+  const totals = results.map(r => r.charges.total);
+  const minTotal = Math.min(...totals);
+  const maxTotal = Math.max(...totals);
+
+  // Summary
+  document.getElementById('summaryBar').style.display = 'flex';
+  document.getElementById('sumTradeVal').textContent = fmt(buyVal);
+  const gpEl = document.getElementById('sumGrossPL');
+  gpEl.textContent = fmt(grossPL);
+  gpEl.style.color = grossPL >= 0 ? 'var(--green)' : 'var(--red)';
+  document.getElementById('sumLowest').textContent = fmt(minTotal);
+  document.getElementById('sumHighest').textContent = fmt(maxTotal);
+
+  // Cards
+  const freeDelivery = currentSegment === 'delivery';
+
+  const cards = results.map(r => {
+    const c = r.charges;
+    const isMin = c.total === minTotal;
+    const netPL = grossPL - c.total;
+
+    const deliveryNote = (currentSegment === 'delivery' && r.delivery.flat === 0 && r.delivery.pct === 0)
+      ? '<span style="color:var(--accent);font-size:11px">✓ Zero brokerage</span>' : '';
+
+    return `
+    <div class="broker-card ${isMin ? 'cheapest' : ''}">
+      <div class="broker-header">
+        <div class="broker-logo ${r.logoClass}">${r.short}</div>
+        <div>
+          <div class="broker-name">${r.name}</div>
+          <div class="broker-type">${r.type} ${deliveryNote}</div>
+        </div>
+      </div>
+      <div class="charge-rows">
+        <div class="charge-row"><span class="label">Brokerage</span><span class="val">${fmt(c.brok)}</span></div>
+        <div class="charge-row"><span class="label">STT</span><span class="val">${fmt(c.stt)}</span></div>
+        <div class="charge-row"><span class="label">Exchange Txn</span><span class="val">${fmt(c.exc)}</span></div>
+        <div class="charge-row"><span class="label">GST (18%)</span><span class="val">${fmt(c.gst)}</span></div>
+        <div class="charge-row"><span class="label">SEBI Charges</span><span class="val">${fmt(c.sebi)}</span></div>
+        <div class="charge-row"><span class="label">Stamp Duty</span><span class="val">${fmt(c.stamp)}</span></div>
+        <div class="charge-row total">
+          <span class="label">Total Charges</span>
+          <span class="val">${fmt(c.total)}</span>
+        </div>
+      </div>
+      <div class="net-pl">
+        <span class="label">Net P&L</span>
+        <span class="val ${netPL >= 0 ? 'profit' : 'loss'}">${netPL >= 0 ? '+' : '-'}${fmt(Math.abs(netPL))}</span>
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('brokerGrid').innerHTML = cards.join('');
+}
+
+// Init
+calculate();
+</script>
+</body>
+</html>
